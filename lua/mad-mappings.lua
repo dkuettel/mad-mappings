@@ -1,19 +1,6 @@
 local M = {} -- public interface
 local P = {} -- private namespace
 
---- public interface ------------------------------------------
-
-function M.setup() end
-
-M.map = {
-    down = P.down,
-    fast_down = P.fast_down,
-    some_down = P.rapid(P.down, P.fast_down),
-    up = P.up,
-    fast_up = P.fast_up,
-    some_up = P.rapid(P.up, P.fast_up),
-}
-
 --- private ---------------------------------------------------
 
 --- clear mappings
@@ -126,5 +113,45 @@ function P.fast_up()
         end
     end
 end
+
+--- public interface ------------------------------------------
+---
+---@class (exact) Map
+---@field [1] string supported modes (can be many)
+---@field [2] string desc
+---@field rhs? string rhs, or it is a group with no functionality if nothing is mapped
+---@field expr? fun() expression
+---@field fn? fun() function
+---@field maps? ModeFn new mappings
+
+-- local test = {
+--     default = {
+--         nv = {
+--             sn = P.down,
+--             si = P.up,
+--             [" e"] = P.x,
+--             vt = P.mode(P.ts_init, "treesitter"),
+--             w = P.mode(nil, "window"),
+--         },
+--     },
+--     treesitter = {
+--         n = {},
+--     },
+--     window = {
+--         u = P.next_window,
+--         e = P.prev_window,
+--     },
+-- }
+
+function M.setup() end
+
+M.map = {
+    down = P.down,
+    fast_down = P.fast_down,
+    some_down = P.rapid(P.down, P.fast_down),
+    up = P.up,
+    fast_up = P.fast_up,
+    some_up = P.rapid(P.up, P.fast_up),
+}
 
 return M
