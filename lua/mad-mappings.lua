@@ -117,18 +117,103 @@ function expr.fast_up()
     end
 end
 
+---@param context string
+function P.push_context(context)
+    table.insert(P.contexts, context)
+    -- TODO what about context info, like how to visualize it and all
+    -- TODO we should also clear mappings
+    P.flat_map_maps(P.maps, context, P.apply_map)
+    vim.cmd.redrawstatus()
+    vim.cmd.redrawtabline()
+end
+
+function P.pop_context()
+    assert(#P.contexts > 1)
+    table.remove(P.contexts)
+    P.flat_map_maps(P.maps, P.contexts[-1], P.apply_map)
+    vim.cmd.redrawstatus()
+    vim.cmd.redrawtabline()
+end
+
+---@param maps Maps
+---@param context string? or "default"
+---@param fn fun(mode: string, lhs: string, action: Action)
+function P.flat_map_maps(maps, context, fn)
+    maps = maps[context or "default"]
+    vim.Iter(maps):each(function(modes, mmaps)
+        vim.Iter(mmaps):each(function(lhs, action)
+            vim.Iter(modes):each(function(mode)
+                fn(mode, lhs, action)
+            end)
+        end)
+    end)
+end
+
+---@param rhs string
+---@param context string
+---@return fun(): string
+function P.expr_ctx_rhs(rhs, context)
+    return function()
+        -- TODO not always we want to switch before? in search it would be nice to do it differently
+        P.push_context(context)
+        return rhs
+    end
+end
+
+---@param xpr fun(): string
+---@param context string
+---@return fun(): string
+function P.expr_ctx_expr(xpr, context)
+    return function()
+        -- TODO lsp says nothing when those functions are missing, why?
+        P.push_context(context)
+        return xpr()
+    end
+end
+
+---@param fn fun()
+---@param context string
+---@return fun()
+function P.fn_ctx_fn(fn, context)
+    return function()
+        P.push_context(context)
+        -- TODO why did we call fn after here?
+        fn()
+    end
+end
+
+---@param context string
+---@return fun()
+function P.fn_ctx(context)
+    return function()
+        P.push_context(context)
+    end
+end
+
 ---@param mode string
 ---@param lhs string
 ---@param action Action
 function P.apply_map(mode, lhs, action)
-    if action.rhs then
-        vim.keymap.set(mode, lhs, action.rhs, { desc = action.desc })
-    elseif action.expr then
-        vim.keymap.set(mode, lhs, action.expr, { desc = action.desc, expr = true })
-    elseif action.fn then
-        vim.keymap.set(mode, lhs, action.fn, { desc = action.desc })
+    if action.context then
+        if action.rhs then
+            vim.keymap.set(mode, lhs, P.expr_ctx_rhs(action.rhs, action.context), { desc = action.desc, expr = true })
+        elseif action.expr then
+            vim.keymap.set(mode, lhs, P.expr_ctx_expr(action.expr, action.context), { desc = action.desc, expr = true })
+        elseif action.fn then
+            vim.keymap.set(mode, lhs, P.fn_ctx_fn(action.fn, action.context), { desc = action.desc })
+        else
+            vim.keymap.set(mode, lhs, P.fn_ctx(action.context), { desc = action.desc })
+        end
     else
-        assert(false)
+        if action.rhs then
+            vim.keymap.set(mode, lhs, action.rhs, { desc = action.desc })
+        elseif action.expr then
+            vim.keymap.set(mode, lhs, action.expr, { desc = action.desc, expr = true })
+        elseif action.fn then
+            vim.keymap.set(mode, lhs, action.fn, { desc = action.desc })
+        else
+            assert(false)
+        end
     end
 end
 
@@ -136,8 +221,13 @@ P.modes = {
     nv = "nv",
 }
 
+P.maps = { default = {} }
+P.contexts = { "default" }
+
 --- public interface ------------------------------------------
 
+---either exactly one of rhs, expr, or fn
+---or context and none or exactly one of rhs, expr, or fn
 ---@class (exact) Action
 ---@field modes "n" | "nv" supported modes
 ---@field desc string description
@@ -147,75 +237,64 @@ P.modes = {
 ---@field context? string context after this
 
 ---@return Action
-local function a(a)
+local function Action(args)
+    -- TODO i dont understand why lsp complains here
     return {
-        modes = a[1],
-        desc = a[2],
-        rhs = a.rhs,
-        expr = a.expr,
-        fn = a.fn,
-        context = a.context,
+        modes = args[1],
+        desc = args[2],
+        rhs = args.rhs,
+        expr = args.expr,
+        fn = args.fn,
+        context = args.context,
     }
 end
 
 ---@type table<string, Action>
 M.actions = {
-    down = a { P.modes.nv, "cursor down visual line", expr = expr.down },
-    fast_down = a { P.modes.nv, "cursor and view down visual line", expr = expr.fast_down },
-    some_down = a { P.modes.nv, "down or fast_down", expr = expr.rapid(expr.down, expr.fast_down) },
-    up = a { P.modes.nv, "cursor up visual line", expr = expr.up },
-    fast_up = a { P.modes.nv, "cursor and view up visual line", expr = expr.fast_up },
-    some_up = a { P.modes.nv, "up or fast_up", expr = expr.rapid(P.up, P.fast_up) },
+    down = Action { P.modes.nv, "cursor down visual line", expr = expr.down },
+    fast_down = Action { P.modes.nv, "cursor and view down visual line", expr = expr.fast_down },
+    some_down = Action { P.modes.nv, "down or fast_down", expr = expr.rapid(expr.down, expr.fast_down) },
+    up = Action { P.modes.nv, "cursor up visual line", expr = expr.up },
+    fast_up = Action { P.modes.nv, "cursor and view up visual line", expr = expr.fast_up },
+    some_up = Action { P.modes.nv, "up or fast_up", expr = expr.rapid(P.up, P.fast_up) },
 }
 
 ---maps go from context to mode to lhs to action
 ---@alias Maps table<string, table<string, table<string, Action>>>
 
----@param action? Action
+---@type Maps
+local example_maps = { ---@diagnostic disable-line: unused-local
+    default = {
+        nv = {
+            u = M.actions.some_up,
+            e = M.actions.some_down,
+            w = M.context(nil, "windows"),
+        },
+    },
+    -- windows = { u = M.actions.next_window, e = M.actions.prev_window },
+}
+
+---@param action Action?
 ---@param context string
 ---@return Action
 function M.context(action, context)
     if action then
         action = vim.deepcopy(action)
     else
-        action = a { P.modes.nv("context ") .. context }
+        -- TODO without an action we dont know what modes to allow
+        action = Action { P.modes.nv, "switch to context " .. context }
     end
     action.context = context
     return action
 end
 
--- local test = {
---     default = {
---         nv = {
---             sn = P.down,
---             si = P.up,
---             [" e"] = P.x,
---             vt = P.mode(P.ts_init, "treesitter"),
---             w = P.mode(nil, "window"),
---         },
---     },
---     treesitter = {
---         n = {},
---     },
---     window = {
---         u = P.next_window,
---         e = P.prev_window,
---     },
--- }
-
 function M.setup() end
 
 ---@param maps Maps
----@param context string?
-function M.apply(maps, context)
-    maps = maps[context or "default"]
-    vim.Iter(maps):each(function(modes, mmaps)
-        vim.Iter(mmaps):each(function(lhs, action)
-            vim.Iter(modes):each(function(mode)
-                P.apply_map(mode, lhs, action)
-            end)
-        end)
-    end)
+function M.apply_maps(maps)
+    P.maps = vim.deepcopy(maps)
+    P.contexts = { "default" }
+    P.flat_map_maps(maps, "default", P.apply_map)
 end
 
 return M
