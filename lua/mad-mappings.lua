@@ -123,6 +123,7 @@ function P.push_context(context)
     table.insert(P.contexts, context)
     -- TODO what about context info, like how to visualize it and all
     -- TODO we should also clear mappings
+    -- TODO I think we also had an option that any non-context key would pop the context?
     P.flat_map_maps(P.maps, context, P.apply_map)
     vim.cmd.redrawstatus { bang = true }
     vim.cmd.redrawtabline { bang = true }
