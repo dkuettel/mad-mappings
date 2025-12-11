@@ -285,7 +285,9 @@ local example_maps = { ---@diagnostic disable-line: unused-local
             w = M.context(nil, "windows"),
         },
     },
-    -- windows = { u = M.actions.next_window, e = M.actions.prev_window },
+    -- TODO somehow lsp is confused here, it doesnt complain that those actions dont exist
+    -- and for the ones that do, it doesnt jump to them
+    windows = { u = M.actions.next_window, e = M.actions.prev_window },
 }
 
 ---@param action Action?
