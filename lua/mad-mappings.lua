@@ -264,7 +264,7 @@ local function Action(args)
     }
 end
 
--- TODO wrap nicer
+-- TODO wrap nicer (in exprs)
 local layouts = require("lavish-layouts")
 
 ---@type table<string, Action>
@@ -275,6 +275,7 @@ M.actions = {
     up = Action { P.modes.nv, "cursor up visual line", expr = expr.up },
     fast_up = Action { P.modes.nv, "cursor and view up visual line", expr = expr.fast_up },
     some_up = Action { P.modes.nv, "up or fast_up", expr = expr.rapid(P.up, P.fast_up) },
+    -- windows
     previous_widnow = Action { { P.modes.nv, P.modes.windows }, "previous window", expr = layouts.previous },
     next_widnow = Action { { P.modes.nv, P.modes.windows }, "next window", expr = layouts.next },
     focus_window = Action { P.modes.n, "focus window", expr = layouts.focus },
