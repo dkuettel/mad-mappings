@@ -117,6 +117,10 @@ function expr.fast_up()
     end
 end
 
+function expr.only_window()
+    return "<cmd>windcmd o<enter>"
+end
+
 ---@param context string
 function P.push_context(context)
     assert(P.maps.context)
@@ -272,15 +276,15 @@ M.actions = {
     some_down = Action { P.modes.nv, "down or fast_down", expr = expr.rapid(expr.down, expr.fast_down) },
     up = Action { P.modes.nv, "cursor up visual line", expr = expr.up },
     fast_up = Action { P.modes.nv, "cursor and view up visual line", expr = expr.fast_up },
-    some_up = Action { P.modes.nv, "up or fast_up", expr = expr.rapid(P.up, P.fast_up) },
+    some_up = Action { P.modes.nv, "up or fast_up", expr = expr.rapid(expr.up, expr.fast_up) },
 
     windows = {
         new = Action { P.modes.n, "new window", expr = layouts.new_from_split },
-        next = Action { { P.modes.n, P.modes.windows }, "next window", expr = layouts.next },
-        previous = Action { { P.modes.n, P.modes.windows }, "previous window", expr = layouts.previous },
+        next = Action { P.modes.n, "next window", expr = layouts.next },
+        previous = Action { P.modes.n, "previous window", expr = layouts.previous },
         focus = Action { P.modes.n, "focus window", expr = layouts.focus },
-        only = Action { P.modes.n, "only window", expr = "<cmd>windcmd o<enter>" },
-        close = Action { P.modes.n, "close window", expr = layouts.close_window },
+        only = Action { P.modes.n, "only window", expr = expr.only_window },
+        close = Action { P.modes.n, "close window", expr = layouts.close },
         close_and_delete = Action { P.modes.n, "close and delete window", expr = layouts.close_and_delete },
         switch_main_layout = Action { P.modes.n, "windows main layout", expr = layouts.switch_main },
         switch_stacked_layout = Action { P.modes.n, "windows stacked layout", expr = layouts.switch_stacked },
@@ -300,7 +304,7 @@ function M.example_maps()
             },
             n = {
                 ww = M.actions.windows.new,
-                wu = M.context(M.actions.windows.prev, "windows"),
+                wu = M.context(M.actions.windows.previous, "windows"),
                 we = M.context(M.actions.windows.next, "windows"),
                 ["w."] = M.actions.windows.only,
                 ["w,"] = M.actions.windows.close,
@@ -315,11 +319,11 @@ function M.example_maps()
             -- NOTE we can have a config here
             n = {
                 u = M.actions.windows.next,
-                e = M.actions.windows.prev,
+                e = M.actions.windows.previous,
                 n = M.context(M.actions.windows.focus, "default"),
                 [","] = M.context(M.actions.windows.close, "default"),
                 d = M.actions.windows.close_and_delete,
-                w = M.context(M.actions.windows.new_from_split, "default"),
+                w = M.context(M.actions.windows.new, "default"),
             },
         },
     }
