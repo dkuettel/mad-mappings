@@ -271,6 +271,7 @@ end
 -- TODO wrap nicer (in exprs)
 local layouts = require("lavish-layouts")
 
+---@type table<string, Action | table<string, Action>>
 M.actions = {
     down = Action { P.modes.nv, "cursor down visual line", expr = expr.down },
     fast_down = Action { P.modes.nv, "cursor and view down visual line", expr = expr.fast_down },
