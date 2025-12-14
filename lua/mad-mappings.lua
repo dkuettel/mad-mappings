@@ -155,11 +155,12 @@ end
 ---@param fn fun(mode: string, lhs: string, action: Action)
 function P.flat_map_maps(maps, context, fn)
     maps = maps[context or "default"]
-    vim.Iter(maps):each(function(modes, mmaps)
-        vim.Iter(mmaps):each(function(lhs, action)
-            vim.Iter(modes):each(function(mode)
+    vim.iter(maps):each(function(modes, mmaps)
+        vim.iter(mmaps):each(function(lhs, action)
+            for i = 1, #modes do
+                local mode = modes:sub(i, i)
                 fn(mode, lhs, action)
-            end)
+            end
         end)
     end)
 end
