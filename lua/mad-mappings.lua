@@ -276,7 +276,8 @@ M.actions = {
     fast_up = Action { P.modes.nv, "cursor and view up visual line", expr = expr.fast_up },
     some_up = Action { P.modes.nv, "up or fast_up", expr = expr.rapid(P.up, P.fast_up) },
     -- windows
-    previous_widnow = Action { { P.modes.nv, P.modes.windows }, "previous window", expr = layouts.previous },
+    new_window = Action { P.modes.n, "new window", expr = layouts.new_from_split },
+    previous_widnow = Action { { P.modes.n, P.modes.windows }, "previous window", expr = layouts.previous },
     next_widnow = Action { { P.modes.nv, P.modes.windows }, "next window", expr = layouts.next },
     focus_window = Action { P.modes.n, "focus window", expr = layouts.focus },
     only_window = Action { P.modes.n, "only window", expr = "<cmd>windcmt o<enter>" },
@@ -298,6 +299,7 @@ function M.example_maps()
                 e = M.actions.some_down,
             },
             n = {
+                ww = M.actions.new_from_split,
                 wu = M.context(M.actions.prev_window, "windows"),
                 we = M.context(M.actions.next_window, "windows"),
                 ["w."] = M.actions.only_window,
