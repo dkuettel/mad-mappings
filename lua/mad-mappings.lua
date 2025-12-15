@@ -151,11 +151,12 @@ end
 ---@param fn fun(mode: string, lhs: string, action: Action)
 function P.flat_map_maps(maps, context, fn)
     maps = maps[context or "default"]
-    vim.Iter(maps):each(function(modes, mmaps)
-        vim.Iter(mmaps):each(function(lhs, action)
-            vim.Iter(modes):each(function(mode)
+    vim.iter(maps):each(function(modes, mmaps)
+        vim.iter(mmaps):each(function(lhs, action)
+            for i = 1, #modes do
+                local mode = modes:sub(i, i)
                 fn(mode, lhs, action)
-            end)
+            end
         end)
     end)
 end
@@ -263,38 +264,68 @@ local function Action(args)
     }
 end
 
----@type table<string, Action>
+-- TODO wrap nicer (in exprs)
+local layouts = require("lavish-layouts")
+
+---@type table<string, Action | table<string, Action>>
 M.actions = {
     down = Action { P.modes.nv, "cursor down visual line", expr = expr.down },
     fast_down = Action { P.modes.nv, "cursor and view down visual line", expr = expr.fast_down },
     some_down = Action { P.modes.nv, "down or fast_down", expr = expr.rapid(expr.down, expr.fast_down) },
     up = Action { P.modes.nv, "cursor up visual line", expr = expr.up },
     fast_up = Action { P.modes.nv, "cursor and view up visual line", expr = expr.fast_up },
-    some_up = Action { P.modes.nv, "up or fast_up", expr = expr.rapid(P.up, P.fast_up) },
+    some_up = Action { P.modes.nv, "up or fast_up", expr = expr.rapid(expr.up, expr.fast_up) },
+
+    windows = {
+        new = Action { P.modes.n, "new window", expr = layouts.new_from_split },
+        next = Action { P.modes.n, "next window", expr = layouts.next },
+        previous = Action { P.modes.n, "previous window", expr = layouts.previous },
+        focus = Action { P.modes.n, "focus window", expr = layouts.focus },
+        only = Action { P.modes.n, "only window", rhs = "<cmd>windcmd o<enter>" },
+        close = Action { P.modes.n, "close window", expr = layouts.close },
+        close_and_delete = Action { P.modes.n, "close and delete window", expr = layouts.close_and_delete },
+        switch_main_layout = Action { P.modes.n, "windows main layout", expr = layouts.switch_main },
+        switch_stacked_layout = Action { P.modes.n, "windows stacked layout", expr = layouts.switch_stacked },
+    },
 }
 
 ---maps go from context to mode to lhs to action
 ---@alias Maps table<string, table<string, table<string, Action>>>
 
----@type Maps
-local example_maps = { ---@diagnostic disable-line: unused-local
-    default = {
-        nv = {
-            u = M.actions.some_up,
-            e = M.actions.some_down,
-            w = M.context(nil, "windows"),
+---@return Maps
+function M.example_maps()
+    return {
+        default = {
+            nv = {
+                u = M.actions.some_up,
+                e = M.actions.some_down,
+            },
+            n = {
+                ww = M.actions.windows.new,
+                wu = M.context(M.actions.windows.previous, "windows"),
+                we = M.context(M.actions.windows.next, "windows"),
+                ["w."] = M.actions.windows.only,
+                ["w,"] = M.actions.windows.close,
+                wd = M.actions.windows.close_and_delete,
+                wm = M.actions.windows.switch_main,
+                ws = M.actions.windows.switch_stacked,
+            },
         },
-    },
-    -- TODO somehow lsp is confused here, it doesnt complain that those actions dont exist
-    -- and for the ones that do, it doesnt jump to them
-    windows = {
-        -- TODO this could I think also just be {}, no need for the key?
-        [1] = { color = "yellow" },
-        u = M.actions.next_window,
-        e = M.actions.prev_window,
-        [","] = M.actions.close_window,
-    },
-}
+        -- TODO somehow lsp is confused here, it doesnt complain that those actions dont exist
+        -- and for the ones that do, it doesnt jump to them
+        windows = {
+            -- NOTE we can have a config here
+            n = {
+                u = M.actions.windows.next,
+                e = M.actions.windows.previous,
+                n = M.context(M.actions.windows.focus, "default"),
+                [","] = M.context(M.actions.windows.close, "default"),
+                d = M.actions.windows.close_and_delete,
+                w = M.context(M.actions.windows.new, "default"),
+            },
+        },
+    }
+end
 
 ---@param action Action?
 ---@param context string
