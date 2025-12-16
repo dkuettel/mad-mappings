@@ -146,9 +146,9 @@ function P.switch_context(context)
     vim.cmd.redrawtabline { bang = true }
 end
 
----@param maps Maps
+---@param maps mad-mappings.Maps
 ---@param context string? or "default"
----@param fn fun(mode: string, lhs: string, action: Action)
+---@param fn fun(mode: string, lhs: string, action: mad-mappings.Action)
 function P.flat_map_maps(maps, context, fn)
     maps = maps[context or "default"]
     vim.iter(maps):each(function(modes, mmaps)
@@ -204,7 +204,7 @@ end
 
 ---@param mode string
 ---@param lhs string
----@param action Action
+---@param action mad-mappings.Action
 function P.apply_map(mode, lhs, action)
     if action.context then
         if action.rhs then
@@ -233,7 +233,7 @@ P.modes = {
     nv = "nv",
 }
 
----@type Maps
+---@type mad-mappings.Maps
 P.maps = { default = {} }
 
 ---@type string[]
@@ -243,7 +243,7 @@ P.contexts = { "default" }
 
 ---either exactly one of rhs, expr, or fn
 ---or context and none or exactly one of rhs, expr, or fn
----@class (exact) Action
+---@class (exact) mad-mappings.Action
 ---@field modes "n" | "nv" supported modes
 ---@field desc string description
 ---@field rhs? string rhs, or it is a group with no functionality if nothing is mapped
@@ -251,9 +251,13 @@ P.contexts = { "default" }
 ---@field fn? fun() function
 ---@field context? string context after this
 
----@return Action
+-- TODO this action is confused with a type definition from telescope also called Action
+-- is that because i setup the lsp wrong? or because lua has no namespaces for that?
+-- ah because as a hack i added telescope as a dependency for deving plugins ... but still, we need that, right?
+---@return mad-mappings.Action
 local function Action(args)
     -- TODO i dont understand why lsp complains here
+    print(P.contexts)
     return {
         modes = args[1],
         desc = args[2],
@@ -267,7 +271,7 @@ end
 -- TODO wrap nicer (in exprs)
 local layouts = require("lavish-layouts")
 
----@type table<string, Action | table<string, Action>>
+---@type table<string, mad-mappings.Action | table<string, mad-mappings.Action>>
 M.actions = {
     down = Action { P.modes.nv, "cursor down visual line", expr = expr.down },
     fast_down = Action { P.modes.nv, "cursor and view down visual line", expr = expr.fast_down },
@@ -290,9 +294,9 @@ M.actions = {
 }
 
 ---maps go from context to mode to lhs to action
----@alias Maps table<string, table<string, table<string, Action>>>
+---@alias mad-mappings.Maps table<string, table<string, table<string, mad-mappings.Action>>>
 
----@return Maps
+---@return mad-mappings.Maps
 function M.example_maps()
     return {
         default = {
@@ -327,9 +331,9 @@ function M.example_maps()
     }
 end
 
----@param action Action?
+---@param action mad-mappings.Action?
 ---@param context string
----@return Action
+---@return mad-mappings.Action
 function M.context(action, context)
     if action then
         action = vim.deepcopy(action)
@@ -343,7 +347,7 @@ end
 
 function M.setup() end
 
----@param maps Maps
+---@param maps mad-mappings.Maps
 function M.apply_maps(maps)
     P.maps = vim.deepcopy(maps)
     P.contexts = { "default" }
