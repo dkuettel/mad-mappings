@@ -1,11 +1,10 @@
 return {
     ---@return mad-mappings.Maps
     example_mappings = function()
-        local context = require("mad-mappings").actions.context
-        -- TODO why doesnt this work?
-        -- local plain = require("mad-mappings").actions.plain
-        local plain = require("mad-mappings.actions.plain")
-        local windows = require("mad-mappings.actions.windows")
+        local mm = require("mad-mappings")
+        local context = mm.actions.context
+        local plain = mm.actions.plain
+        local windows = mm.actions.windows
 
         return {
             default = {

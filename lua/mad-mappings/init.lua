@@ -215,9 +215,9 @@ return {
             pop = validate_action { modes = "nv", desc = "pop context", fn = pop_context },
         },
         -- TODO not sure, does this work? does it get types? is it recursive?
-        plain = require("mad-mappings.plain"),
+        plain = require("mad-mappings.actions.plain"),
         -- TODO window or windows? or layout(s)?
-        windows = require("mad-mappings.windows"),
+        windows = require("mad-mappings.actions.windows"),
     },
 
     ---@class (exact) mad-mappings.make_action
