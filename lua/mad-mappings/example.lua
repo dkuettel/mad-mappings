@@ -10,8 +10,8 @@ return {
             default = {
                 -- fn = function() end,
                 nv = {
-                    u = plain.some_up,
-                    e = plain.some_down,
+                    u = plain.up_adaptive,
+                    e = plain.down_adaptive,
                 },
                 n = {
                     ww = windows.new,

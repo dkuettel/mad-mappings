@@ -31,7 +31,7 @@ local function down()
     return "gj" -- treats wrapped lines as they appear
 end
 
-local function fast_down()
+local function down_fast()
     if vim.fn.winline() < vim.fn.winheight(0) / 2 - 1 then
         -- return "j"
         return "gj" -- treats wrapped lines as they appear
@@ -52,7 +52,7 @@ local function up()
     return "gk" -- treats wrapped lines as they appear
 end
 
-local function fast_up()
+local function up_fast()
     if vim.fn.winline() > vim.fn.winheight(0) / 2 + 1 then
         return "gk" -- treats wrapped lines as they appear
     else
@@ -71,9 +71,9 @@ local nv = require("mad-mappings").make_action_nv
 
 return {
     down = nv { "cursor down visual line", expr = down },
-    fast_down = nv { "cursor and view down visual line", expr = fast_down },
-    some_down = nv { "down or fast_down", expr = rapid(down, fast_down) },
+    down_fast = nv { "cursor and view down visual line", expr = down_fast },
+    down_adaptive = nv { "down or down_fast", expr = rapid(down, down_fast) },
     up = nv { "cursor up visual line", expr = up },
-    fast_up = nv { "cursor and view up visual line", expr = fast_up },
-    some_up = nv { "up or fast_up", expr = rapid(up, fast_up) },
+    up_fast = nv { "cursor and view up visual line", expr = up_fast },
+    up_adaptive = nv { "up or up_fast", expr = rapid(up, up_fast) },
 }
