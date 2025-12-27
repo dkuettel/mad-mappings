@@ -287,4 +287,24 @@ return {
             context = args.context,
         }
     end,
+
+    ---@class (exact) mad-mappings.make_action_v
+    ---@field [1] string
+    ---@field rhs? string
+    ---@field expr? fun():string
+    ---@field fn? fun()
+    ---@field context? string
+
+    ---@param args mad-mappings.make_action_v
+    ---@return mad-mappings.Action
+    make_action_v = function(args)
+        return validate_action {
+            modes = "n",
+            desc = args[1],
+            rhs = args.rhs,
+            expr = args.expr,
+            fn = args.fn,
+            context = args.context,
+        }
+    end,
 }
